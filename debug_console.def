@@ -1,0 +1,16 @@
+include: c/posix.def
+
+page: debug_console, basic_frame
+    module: c
+
+    &call socket_server, 1300
+        $print $clear-
+	$call print_client_address
+	$call serve
+
+subcode: serve
+    &call socket_read_loop
+	$if strncmp(ts_socket_buffer, "quit", 4)==0
+	    break
+	$call Write, 1, ts_socket_buffer, n
+
