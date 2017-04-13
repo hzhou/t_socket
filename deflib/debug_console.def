@@ -1,0 +1,36 @@
+include: c/posix.def
+
+fncode: debug_init(s_host)
+    $if s_host==NULL
+        s_host="127.0.0.1"
+    s_port = "1300"
+    $call tcp_connect, s_host, s_port
+
+    $global int debug_socket=0
+    debug_socket = tn_socket
+
+fncode: debug_close
+    $if debug_socket
+        # shutdown(debug_socket, SHUT_RDWR);
+        close(debug_socket)
+        debug_socket = 0
+
+fncode: debug_msg(fmt)
+    $include stdarg
+    va_list argp;
+    va_start(argp, fmt);
+    $(set:N=200)
+    $global char debug_msg_buffer[$(N)]
+    tn_len = vsnprintf(debug_msg_buffer, $(N), fmt, argp)
+    $if tn_len>0 && tn_len<$(N)
+        $call Write, debug_socket, debug_msg_buffer, tn_len
+
+subcode: debug_define
+    $list debug_init, debug_close, debug_msg
+
+subcode: debug_declare
+    $declare extern int debug_socket
+    $declare void debug_msg(const char * fmt, ...)
+
+
+
