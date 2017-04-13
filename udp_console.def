@@ -1,0 +1,9 @@
+include: c/udp.def
+
+#-- simple udp server ---
+page: udp_console, basic_frame
+    module: c
+
+    $call init_udp_server, 1300
+    $call udp_listen_loop
+

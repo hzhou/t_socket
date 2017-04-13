@@ -1,0 +1,10 @@
+include: c/socket.def
+
+page: test, basic_frame
+    module: c
+
+    debug_init(NULL)
+    $for i=0:10
+        debug_msg("debug message #%d\n", i)
+        $include unistd
+        sleep(1);

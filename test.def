@@ -1,0 +1,87 @@
+include: c_posix.def
+
+subcode: assert(cond)
+    $if !($(cond))
+	printf("Error at line %d, errno=%d\n", __LINE__, errno)
+	exit(1)
+
+# --------------------------------------------------------------
+page: test, basic_frame
+    subcode: main
+	$call tcp_connect, "192.168.2.7", "1100"
+	write(tn_socket, "Hello", 5)
+	close(tn_socket)
+
+# --------------------------------------------------------------
+page: test1
+    subcode: n_main
+	$call assert, argc>=2
+	s_host=argv[1]
+	s_port="1300"
+	$call tcp_connect, s_host, s_port
+	#$call client_read
+	$call client_echo
+
+subcode: client_read
+    &call socket_read_loop
+	ts_socket_buffer[n]='\0'
+	tn_ret=fputs(ts_socket_buffer, stdout)
+	$call assert, tn_ret!=EOF
+
+# --------------------
+page: test2
+    subcode: n_main
+	$call daemon_start
+	&call socket_server, 1300
+	    $call print_client_address
+	    &call fork_server
+		#$call serve_time
+		$call serve_echo
+
+subcode: serve_time
+    tn_time=time(NULL)
+    $local ts_temp_buf[50]
+    $call sprint "%.24s\r\n", ctime(&tn_time))
+    $call Write, tn_socket, $(s), $(n)
+    $call assert, n>0
+
+# --------------------
+subcode: serve_echo
+    &call socket_read_loop
+	$if strncmp(ts_socket_buffer, "quit", 4)==0
+	    break
+	$call Write, tn_socket, ts_socket_buffer, n
+
+# ----------------
+subcode: client_echo
+    $(set:size=100)
+    $local ts_line_buffer[$(size)+1]
+    $local ts_sock_buffer[$(size)+1]
+    tn_stdin=fileno(stdin)
+    tn_stdout=fileno(stdout)
+    tb_eof=0
+    $while 1
+	&call select_setup
+	    $if !tb_eof
+		$call select, tn_stdin
+	    $call select, tn_socket
+	&call select_on, tn_stdin
+	    $call client_echo_line
+	&call select_on, tn_socket
+	    $call client_echo_socket
+
+subcode: client_echo_line
+    $call Read, tn_stdin, ts_line_buffer, $(size)
+    $if n>0
+	$call Write, tn_socket, ts_line_buffer, n
+    $else
+	shutdown(tn_socket, SHUT_WR)
+	tb_eof=1
+
+subcode: client_echo_socket
+    $call Read, tn_socket,  ts_sock_buffer, $(size)
+    $if n>0
+	$call Write, tn_stdout, ts_sock_buffer, n
+    $else
+	break
+
