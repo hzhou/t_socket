@@ -1,5 +1,8 @@
 include: c/debug_console.def
 
+subcode: _autoload
+    $include define _POSIX_C_SOURCE 201112L 
+
 page: test, basic_frame
     module: c
 

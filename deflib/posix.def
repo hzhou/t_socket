@@ -58,6 +58,7 @@ subcode: socket_common
 # ---- TCP Wrapper ---------------------------------------
 subcode: tcp_connect(host, port)
     $call socket_common
+    $include sys/types, sys/socket
     $include netdb
     $local struct addrinfo ai_hint
     memset(&ai_hint, 0, sizeof(ai_hint))
