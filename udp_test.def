@@ -4,18 +4,18 @@ page: udp_test, basic_frame
     module: c
 
     $call init_udp_socket, socket_out, 0
-    $my struct sockaddr_in t_addr
-    $call _sockaddr_set, t_addr, 192.168.2.8, 1300
+    # $my struct sockaddr_in t_addr
+    $call _sockaddr_set, t_addr, 127.0.0.1, 1300
     $call send, "Hello World!"
 
     subcode: send(@msg)
         $(set:N=1024)
-        $local pc_buf[$(N)]
+        $local s_buf[$(N)]
         $temp n
-        $(n)=snprintf(pc_buf, $(N), $(msg))
+        $(n)=snprintf(s_buf, $(N), $(msg))
 
         $(set:out_addr=(struct sockaddr *)&t_addr, sizeof(t_addr))
-        tn_ret = sendto(socket_out, pc_buf, $(n), 0, $(out_addr))
+        tn_ret = sendto(socket_out, s_buf, $(n), 0, $(out_addr))
         $if tn_ret<0
             $call die, "sendto failed"
 

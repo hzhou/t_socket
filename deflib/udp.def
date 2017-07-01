@@ -16,9 +16,10 @@ subcode: init_udp_socket(s, port)
     $my int t_addr_len=sizeof(struct sockaddr_in)
     $(set:bind_addr=(struct sockaddr *)&t_addr, t_addr_len)
 
-    $call _sockaddr_set, t_addr, INADDR_ANY, $(port)
-    $if bind($(s), $(bind_addr)) <0
-        $call die, "init_udp_socket: bind failed"
+    $(if:port!=0)
+        $call _sockaddr_set, t_addr, INADDR_ANY, $(port)
+        $if bind($(s), $(bind_addr)) <0
+            $call die, "init_udp_socket: bind failed"
 
 #-- examples
 subcode: init_udp_client
@@ -57,11 +58,11 @@ subcode: _sockaddr_set(addr, host, port)
 subcode: udp_listen_loop
     $while 1
         $(set:N=1024)
-        $local pc_buf[$(N)]
+        $my s_buf[$(N)]
 
-        $(set:in_addr=(struct sockaddr *)&t_addr, &t_addr_len)
-        tn_len = recvfrom(socket_in, pc_buf, $(N), 0, $(in_addr))
+        $(set:in_addr=(struct sockaddr *)&t_addr, (socklen_t*)&t_addr_len)
+        tn_len = recvfrom(socket_in, s_buf, $(N), 0, $(in_addr))
         $if tn_len>0
-            pc_buf[tn_len]=0
-            puts(pc_buf)
+            s_buf[tn_len]=0
+            puts(s_buf)
 

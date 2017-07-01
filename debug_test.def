@@ -1,4 +1,4 @@
-include: c/socket.def
+include: c/debug_console.def
 
 page: test, basic_frame
     module: c

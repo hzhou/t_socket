@@ -5,16 +5,18 @@ subcode:: _autoload
 
 #---- Read/Write Wrapper --------------------------------
 subcode: Read(fd, buf, size)
-    $fcall tn_ret=read1($(fd), $(buf), $(len))
+    tn_ret=read1($(fd), $(buf), $(len))
 
 subcode: Write(fd, buf, len)
-    $fcall tn_ret=writen($(fd), $(buf), $(len))
+    tn_ret=writen($(fd), $(buf), $(len))
 
 fncode: read1(int fd, void * p, n)
-    &call retry_block
+    $while 1
         tn_read=read(fd, p, n)
         $if tn_read<0 && errno==EINTR
-            $call retry
+            continue
+        $else
+            break
     return tn_read
 
 fncode: readn(int fd, void * p, n)
@@ -30,7 +32,7 @@ fncode: readn(int fd, void * p, n)
             break
         $else
             tn_read-=tn_read
-            p+=tn_read
+            p=(char*p)+tn_read
     return n-tn_remain
 
 fncode: writen(int fd, void * p, n)
@@ -45,7 +47,7 @@ fncode: writen(int fd, void * p, n)
                 return -1
         $else
             tn_remain-=tn_written
-            p+=tn_written
+            p=(char*)p+tn_written
     return n
 
 # ---- Generic Client -------------------------------------
