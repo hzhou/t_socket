@@ -1,0 +1,8 @@
+include: perl/debug_console.def
+
+page: test
+    module: perl
+
+    $call debug_init, -
+    $call debug_test
+

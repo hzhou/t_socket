@@ -1,0 +1,13 @@
+subcode: debug_init(host)
+    $(if:host=-)
+        $(set:host=127.0.0.1)
+
+    $use IO::Socket::INET
+    $global $debug_socket
+    $debug_socket = IO::Socket::INET->new(PeerAddr=>"$(host)", PeerPort=>1300, Proto=>"tcp", Type=>SOCK_STREAM) or die "Couldn't connect to debug console: $!\n"
+
+subcode: debug_test
+    $(set:print_to=$debug_socket)
+    $for $i=0:10
+        $print debug message $green{#$i}
+        sleep 1
