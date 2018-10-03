@@ -1,0 +1,40 @@
+page: t, basic_frame
+    module: c
+    host: "google.com"
+    port: "80"
+
+    $include sys/types, sys/socket
+    $include netdb
+
+    $local struct addrinfo ai_hint
+    memset(&ai_hint, 0, sizeof(ai_hint))
+    ai_hint.ai_family=AF_UNSPEC
+    ai_hint.ai_socktype=SOCK_STREAM
+
+    $local struct addrinfo * ai_res
+    tn_ret=getaddrinfo($(host), $(port), &ai_hint, &ai_res)
+    $call assert, tn_ret==0
+
+    ai_p=ai_res
+    $while ai_p; ai_p = ai_p->ai_next
+        $call dump_ai, ai_p
+
+    freeaddrinfo(ai_res)
+
+subcode: dump_ai(ai)
+    $map dump(family) AF_INET, AF_INET6, AF_UNSPEC
+    NOOP
+    $map dump(socktype) SOCK_STREAM, SOCK_DGRAM
+    NOOP
+    $print "sockaddr[%d] -", $(ai)->ai_addrlen
+    $if $(ai)->ai_addrlen==16
+        $my unsigned long a = ((struct sockaddr_in*)($(ai)->ai_addr))->sin_addr.s_addr
+        $print "%d.%d.%d.%d", (int)a&0xff, (int)(a>>8)&0xff, (int)(a>>16)&0xff, (int)(a>>24) 
+    # socktype
+    # protocol
+    # addr
+    # addrlen
+
+    subcode: dump(family, name)
+        $case $(ai)->ai_$(family) == $(name)
+            $print ai_$(family): $(name); - 

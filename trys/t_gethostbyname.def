@@ -1,0 +1,28 @@
+# The gethostbyname*() and gethostbyaddr*() functions are obsolete. Applications should use getaddrinfo(3) and getnameinfo(3) instead. 
+
+page: t, basic_frame
+    module: c
+    host: "google.com"
+    port: "80"
+
+    # struct hostent *gethostbyaddr(const void *addr, socklen_t len, int type);
+    # struct hostent *gethostbyname(const char *name);
+
+    $include netdb
+    $my struct hostent* host = gethostbyname($(host))
+    $call dump_hostent, host
+
+subcode: dump_hostent(h)    
+    $print "name: %s", $(h)->h_name
+    $map dump(h_addrtype) AF_INET, AF_INET6, AF_UNSPEC
+    $print "h_addrlen: %d", $(h)->h_length
+    $my i = 0
+    $while $(h)->h_addr_list[i]; i++
+        $print "addr #%d: -", i+1
+        $for j=0:4
+            $print "%d.-", (unsigned char)$(h)->h_addr_list[i][j]
+        $print
+
+    subcode: dump(member, name)
+        $case $(h)->$(member) == $(name)
+            $print $(member): $(name); - 
