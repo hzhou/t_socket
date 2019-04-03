@@ -2,6 +2,10 @@ subcode:: _autoload
     $include string
     $class socket
 
+macros:
+    # variable to return on connect and listen
+    socket: tn_socket
+
 subcode: check_socket_error(name)
     $if tn_err<0
         $include <errno.h>
@@ -38,6 +42,8 @@ subcode: get_sockaddr(addr, @param)
         $(export:path)
 
 perlcode: parse_sockaddr
+    # 192.168.2.1:2222, tcp
+    # /path/to/socket
     my @tlist=split /,\s*/, $param
     my $af_family="AF_INET"
     my $sock_type="SOCK_STREAM"
@@ -154,12 +160,12 @@ subcode: socket_listen(var)
 
 subcode: socket_accept(var, addr)
     $call socket_addr_param, $(var), $(addr)
-    $local tn_socket
-    $set_var_attr tn_socket, class=socket
+    $local int $(socket)
+    $set_var_attr $(socket), class=socket
     $get_var_attr $(var), af_family, sock_type
-    $set_var_attr tn_socket, af_family=$(af_family), sock_type=$(sock_type)
-    tn_socket = accept($(var), $(addr_param))
-    tn_err=tn_socket
+    $set_var_attr $(socket), af_family=$(af_family), sock_type=$(sock_type)
+    $(socket) = accept($(var), $(addr_param))
+    tn_err=$(socket)
     $call check_socket_error, accept
 
 subcode: socket_connect(var, addr)

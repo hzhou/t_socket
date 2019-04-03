@@ -1,11 +1,14 @@
 include: c/socket.def
+subcode:1 _autoload
+    $include define _POSIX_C_SOURCE 200112L
+
 subcode:: _autoload
     $include unistd
     $include string
 
 #---- Read/Write Wrapper --------------------------------
 subcode: Read(fd, buf, size)
-    tn_ret=read1($(fd), $(buf), $(len))
+    tn_ret=read1($(fd), $(buf), $(size))
 
 subcode: Write(fd, buf, len)
     tn_ret=writen($(fd), $(buf), $(len))
@@ -69,29 +72,35 @@ subcode: tcp_connect(host, port)
     $call assert, tn_ret==0
     ai_p=ai_res
     $while ai_p
-        tn_socket=socket(ai_p->ai_family, ai_p->ai_socktype, ai_p->ai_protocol)
-        $if tn_socket<0
+        $local int $(socket)
+        $(socket)=socket(ai_p->ai_family, ai_p->ai_socktype, ai_p->ai_protocol)
+        $if $(socket)<0
             ai_p=ai_p->ai_next
             continue
-        tn_ret=connect(tn_socket, ai_p->ai_addr, ai_p->ai_addrlen)
+        tn_ret=connect($(socket), ai_p->ai_addr, ai_p->ai_addrlen)
         $if tn_ret==0
             break
         $else
             $print Failed to connect.
-            close(tn_socket)
-            tn_socket=0
+            close($(socket))
+            $(socket)=0
             ai_p=ai_p->ai_next
             continue
     $call assert, ai_p
     freeaddrinfo(ai_res)
+
+subcode: tcp_connect_once(host, port)
+    $call tcp_connect, $(host), $(port)
+    BLOCK
+    close($(socket))
 
 # ---- Read Loop ---------------------------------------
 subcode: socket_read_loop
     $(set:SIZE=1000)
     $local ts_socket_buffer[$(SIZE)+1]
     $while 1
-        # $call Read, tn_socket, ts_socket_buffer, $(SIZE)
-        n=read(tn_socket, ts_socket_buffer, $(SIZE))
+        # $call Read, $(socket), ts_socket_buffer, $(SIZE)
+        n=read($(socket), ts_socket_buffer, $(SIZE))
         $if n<0
             $call debug_errno, Read Error
             break
@@ -101,16 +110,23 @@ subcode: socket_read_loop
             BLOCK
 
 # ---- Generic Server -------------------------------------
-subcode: socket_server(port)
-    $local socket server: 0:$(port)
-    server.$listen
+subcode: tcp_listen(port)
+    $call socket_init, tn_socket_listen, local, 0:$(port)
+    $call socket_listen, tn_socket_listen
 
     $while 1
         $print "Accepting connection at port $(port)"
-        server.$accept client_addr
-        $if tn_socket>=0
+        $call socket_accept, tn_socket_listen, client_addr
+        $if $(socket)>=0
             BLOCK
-            tn_socket.$close
+            $call Close, $(socket)
+
+subcode: tcp_listen_once(port)
+    &call tcp_listen, $(port)
+        BLOCK
+        $call Close, $(socket)
+        $call Close, tn_socket_listen
+        break
 
 # ---- Common Util-----------------------------------------
 subcode: fork_server
@@ -118,9 +134,10 @@ subcode: fork_server
     $if tn_pid==0
         $call Close, tn_socket_listen
         BLOCK
-        $call Close, tn_socket
+        $call Close, $(socket)
         exit(0)
 
+#---------------------------------------- 
 subcode: print_client_address
     $include <arpa/inet.h>
     $local ts_ip_buffer[16]

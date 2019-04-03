@@ -1,4 +1,4 @@
-include: c_posix.def
+include: c/posix.def
 
 subcode: assert(cond)
     $if !($(cond))
