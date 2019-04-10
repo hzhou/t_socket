@@ -1,5 +1,9 @@
 subcode:: _autoload
     $include string
+    $include <netinet/in.h>
+    $include <sys/socket.h>
+    $include <sys/un.h>
+    $include <errno.h>
     $class socket
 
 macros:
@@ -8,7 +12,6 @@ macros:
 
 subcode: check_socket_error(name)
     $if tn_err<0
-        $include <errno.h>
         $symbol int errno
         $print "socket error in $(name): errno = $errno"
 
@@ -85,7 +88,6 @@ perlcode: parse_sockaddr
 
 #----- Socket Address ----------------------------------- 
 subcode: ip_addr(addr, ip, port)
-    $include <netinet/in.h>
     $local struct sockaddr_in $(addr)
     memset(&$(addr), 0, sizeof($(addr)))
     $(addr).sin_family=AF_INET
@@ -93,8 +95,6 @@ subcode: ip_addr(addr, ip, port)
     $(addr).sin_addr.s_addr=htonl($(ip))
 
 subcode: unix_addr(addr, path)
-    $include <sys/socket.h>
-    $include <sys/un.h>
     $local struct sockaddr_un $(addr)
     memset(&$(addr), 0, sizeof($(addr)))
     $(addr).sun_family=AF_UNIX

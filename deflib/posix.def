@@ -38,7 +38,7 @@ fncode: readn(int fd, void * p, n)
             p=(char*p)+tn_read
     return n-tn_remain
 
-fncode: writen(int fd, void * p, n)
+fncode: writen(int fd, const void * p, n)
     $return_type int
     tn_remain=n
     $while tn_remain>0
